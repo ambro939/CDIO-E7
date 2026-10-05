@@ -44,7 +44,7 @@ void setup() {
 
 void loop() {
   JoystickData joystick;
-  joystick.x = analogRead(34);
+  joystick.x = analogRead(33);
   joystick.y = analogRead(35);
 
   esp_now_send(servoMAC, (uint8_t *)&joystick, sizeof(joystick));
