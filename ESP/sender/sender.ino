@@ -5,11 +5,11 @@
  *  MAC de este ESP32: 68:09:47:26:D4:48
  *  Envía datos del joystick al receptor vía ESP-NOW
  *
- *  Conexiones según schematic (U2):
- *    VRy  → GPIO 32 (IO32, pin 8)
- *    VRx  → GPIO 33 (IO33, pin 9)
- *    5V   → Joystick VCC
- *    GND  → Joystick GND
+ *  Conexiones:
+ *    VRy  → GPIO 32
+ *    VRx  → GPIO 33
+ *    5v   → 3.3V
+ *    GND  → GND
  * ══════════════════════════════════════════════════
  */
 
@@ -18,7 +18,7 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 
-// ── Pines del Joystick (según schematic U2) ──
+// ── Pines del Joystick ──
 #define JOY_X_PIN  33   // VRx → IO33 (dirección: izquierda/derecha → servo)
 #define JOY_Y_PIN  32   // VRy → IO32 (aceleración: adelante/atrás → motor)
 
@@ -26,7 +26,6 @@
 uint8_t receiverMAC[] = {0x68, 0x09, 0x47, 0x25, 0xD4, 0x38};
 
 // ── Estructura de datos que se envía ──
-// IMPORTANTE: debe ser idéntica en el receptor
 struct JoystickData {
   int x;      // valor del eje X (0-4095) → controla el servo
   int y;      // valor del eje Y (0-4095) → controla el motor DC
@@ -37,7 +36,7 @@ esp_now_peer_info_t peerInfo;
 // Callback que se ejecuta cada vez que se envía un paquete
 void onDataSent(const wifi_tx_info_t *info, esp_now_send_status_t status) {
   // Descomentar la siguiente línea solo para depuración:
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "OK" : "FAIL");
+  // Serial.println(status == ESP_NOW_SEND_SUCCESS ? "OK" : "FAIL");
 }
 
 void setup() {
@@ -85,11 +84,13 @@ void loop() {
   // Enviar el struct completo al receptor
   esp_now_send(receiverMAC, (uint8_t *)&data, sizeof(data));
 
-  // Imprimir para depuración (comentar en uso real para mayor velocidad)
+  // Imprimir para depuración (comentar en uso real)
+  """
   Serial.print("X: ");
   Serial.print(data.x);
   Serial.print("\tY: ");
   Serial.println(data.y);
+  """
 
   // 50ms entre envíos (20 actualizaciones por segundo)
   delay(150);
