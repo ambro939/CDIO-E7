@@ -5,6 +5,222 @@
 	(uuid "e494766f-42d1-4c3d-bf3f-66989c265a75")
 	(paper "A4")
 	(lib_symbols
+		(symbol "Conn_01x04_1"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "J"
+				(at 0 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Conn_01x04"
+				(at 0 -7.62 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Conn_01x04_1_1_1"
+				(rectangle
+					(start -1.27 3.81)
+					(end 1.27 -6.35)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(rectangle
+					(start -1.27 2.667)
+					(end 0 2.413)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 0.127)
+					(end 0 -0.127)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -2.413)
+					(end 0 -2.667)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -1.27 -4.953)
+					(end 0 -5.207)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 2.54 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 3.81)
+					(name "Pin_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -5.08 0)
+					(length 3.81)
+					(name "Pin_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Connector_Generic:Conn_01x03"
 			(pin_numbers
 				(hide yes)
@@ -1141,6 +1357,9 @@
 			(embedded_fonts no)
 		)
 		(symbol "Motor:Motor_DC"
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
 				(offset 0)
 			)
@@ -1342,6 +1561,9 @@
 			(embedded_fonts no)
 		)
 		(symbol "RF_Module:ESP32-WROOM-32U"
+			(pin_numbers
+				(hide yes)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2371,6 +2593,16 @@
 	)
 	(wire
 		(pts
+			(xy 168.91 90.17) (xy 181.61 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2369cbaf-10f6-4a5e-b76b-6e38f00e2a6d")
+	)
+	(wire
+		(pts
 			(xy 127 92.71) (xy 140.97 92.71)
 		)
 		(stroke
@@ -2428,6 +2660,16 @@
 			(type default)
 		)
 		(uuid "598ef4cc-a0b2-4342-8079-7e1936998f67")
+	)
+	(wire
+		(pts
+			(xy 168.91 92.71) (xy 181.61 92.71)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5a46ec5f-71f8-4172-9f9e-7134c0469d7d")
 	)
 	(wire
 		(pts
@@ -2541,6 +2783,26 @@
 	)
 	(wire
 		(pts
+			(xy 97.79 140.97) (xy 106.68 140.97)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c1e20296-55f3-4805-8a13-af306e1d50bd")
+	)
+	(wire
+		(pts
+			(xy 168.91 95.25) (xy 181.61 95.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c4dffebf-1e77-45e2-b4bc-2e9f8a527d64")
+	)
+	(wire
+		(pts
 			(xy 127 139.7) (xy 140.97 139.7)
 		)
 		(stroke
@@ -2608,6 +2870,26 @@
 			(type default)
 		)
 		(uuid "f6c6f5c1-8bf3-45f3-ab47-9a2389d21b55")
+	)
+	(wire
+		(pts
+			(xy 168.91 97.79) (xy 181.61 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fd41a994-b0f9-47fb-9975-0edef48c9a6e")
+	)
+	(label "GND"
+		(at 168.91 97.79 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0d96e104-1a02-40e5-86ff-2ee9c6520751")
 	)
 	(label "RPWM"
 		(at 106.68 135.89 0)
@@ -2699,6 +2981,16 @@
 		)
 		(uuid "5d842a53-16ce-46d2-81ce-4c5dc6fc3ba1")
 	)
+	(label "BATT-"
+		(at 168.91 92.71 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "5e60e68d-8295-4866-9202-fd9834c9d047")
+	)
 	(label "BATT+"
 		(at 139.7 63.5 0)
 		(effects
@@ -2718,6 +3010,16 @@
 			(justify left bottom)
 		)
 		(uuid "5f8cee42-98f4-4202-bb72-4044d264fa5b")
+	)
+	(label "DIVISOR"
+		(at 168.91 95.25 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6116d64f-3959-4e0b-8656-b2af4daf8eeb")
 	)
 	(label "BATT+"
 		(at 127 90.17 0)
@@ -2799,6 +3101,16 @@
 		)
 		(uuid "a00c863a-ecdb-45ef-9c6d-470227e93b04")
 	)
+	(label "BATT+"
+		(at 168.91 90.17 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "bdee72df-9d8d-4cb9-99ab-cff971d5b362")
+	)
 	(label "+5V"
 		(at 58.42 138.43 0)
 		(effects
@@ -2808,6 +3120,16 @@
 			(justify left bottom)
 		)
 		(uuid "c74cc467-8792-45b6-8815-0e193f8addf8")
+	)
+	(label "DIVISOR"
+		(at 106.68 140.97 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "db1a7fa0-407f-4761-9b8a-b417709a4d52")
 	)
 	(label "BATT-"
 		(at 127 137.16 0)
@@ -3075,6 +3397,96 @@
 			(project "CDIO"
 				(path "/e494766f-42d1-4c3d-bf3f-66989c265a75"
 					(reference "J4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_name "Conn_01x04_1")
+		(lib_id "Connector_Generic:Conn_01x04")
+		(at 186.69 92.71 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "5771c872-fb6b-4ec2-80c0-1b3c5f115511")
+		(property "Reference" "J3"
+			(at 189.23 92.7099 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "Divisor de voltaje (BREADBOARD)"
+			(at 189.23 95.2499 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 186.69 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 186.69 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"
+			(at 186.69 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "4"
+			(uuid "e157f242-a1c1-4374-a817-73091ef5405e")
+		)
+		(pin "2"
+			(uuid "647f65fb-0cdc-48bb-8959-ab73bef79f5f")
+		)
+		(pin "3"
+			(uuid "24e3a24b-6289-48f5-94c3-c6e9ffe23e88")
+		)
+		(pin "1"
+			(uuid "46f620df-db24-4951-81b3-fbaf04b6933c")
+		)
+		(instances
+			(project "CDIO"
+				(path "/e494766f-42d1-4c3d-bf3f-66989c265a75"
+					(reference "J3")
 					(unit 1)
 				)
 			)
