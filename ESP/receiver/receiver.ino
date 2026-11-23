@@ -1,6 +1,19 @@
 /* MAC: 68:09:47:25:D4:38.
  */
 
+// ═══════════════════════════════════════════════════════════════════
+//  CONFIGURACION RAPIDA
+// ═══════════════════════════════════════════════════════════════════
+//  POTENCIA MAXIMA DEL MOTOR, en porcentaje (%).
+//  Cambie solo el numero y vuelva a cargar el codigo al ESP32.
+//    100 = sin limite (potencia completa)
+//     90 = maximo 90%
+//     50 = maximo la mitad
+//  Valores validos: 0 a 100. Aplica igual hacia adelante y en reversa.
+//  El joystick sigue usando todo su recorrido: a fondo = este limite.
+constexpr int MOTOR_MAX_POWER_PERCENT = 100;
+// ═══════════════════════════════════════════════════════════════════
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <esp_now.h>
@@ -123,11 +136,18 @@ void onDataReceive(const esp_now_recv_info_t *info, const uint8_t *data, int len
   portEXIT_CRITICAL(&mux);
 }
 
+static_assert(MOTOR_MAX_POWER_PERCENT >= 0 && MOTOR_MAX_POWER_PERCENT <= 100,
+              "MOTOR_MAX_POWER_PERCENT debe estar entre 0 y 100");
+// PWM maximo (0-255) que se le permite al motor segun el porcentaje configurado.
+constexpr long MOTOR_MAX_PWM = (255L * MOTOR_MAX_POWER_PERCENT + 50) / 100;
+
 int targetFromJoystick(int y) {
+  // Escalar todo el recorrido del joystick a 0..MOTOR_MAX_PWM (no recortar),
+  // para conservar control fino aun con el limite activo.
   if (y > CENTER + DEADZONE)
-    return constrain(map(y, CENTER + DEADZONE, 4095, 0, 255), 0L, 255L);
+    return constrain(map(y, CENTER + DEADZONE, 4095, 0, MOTOR_MAX_PWM), 0L, MOTOR_MAX_PWM);
   if (y < CENTER - DEADZONE)
-    return -constrain(map(y, CENTER - DEADZONE, 0, 0, 255), 0L, 255L);
+    return -constrain(map(y, CENTER - DEADZONE, 0, 0, MOTOR_MAX_PWM), 0L, MOTOR_MAX_PWM);
   return 0;
 }
 
@@ -197,6 +217,8 @@ void setup() {
   }
   lastControl = millis();
   ready = true;
+  Serial.printf("Potencia maxima del motor: %d%% (PWM %ld/255)\n",
+                MOTOR_MAX_POWER_PERCENT, MOTOR_MAX_PWM);
   Serial.println("AUTO listo. Acelerador en neutro para habilitar.");
 }
 
