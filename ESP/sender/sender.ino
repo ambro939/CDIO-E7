@@ -10,6 +10,9 @@
 #include <esp_wifi.h>
 #include <esp_idf_version.h>
 #include <esp_arduino_version.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <math.h>
 #include <string.h>
 #if ESP_ARDUINO_VERSION_MAJOR < 3
@@ -36,9 +39,10 @@ struct __attribute__((packed)) Telemetry {
   int16_t pwm;
   uint8_t angle;
   uint8_t state;
+  uint16_t batteryMv; // Voltaje de bateria medido en el auto, en mV.
 };
 static_assert(sizeof(Command) == 12, "Command layout");
-static_assert(sizeof(Telemetry) == 12, "Telemetry layout");
+static_assert(sizeof(Telemetry) == 14, "Telemetry layout");
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 bool ready = false;
 bool txBusy = false;
@@ -89,8 +93,12 @@ bool beginRadio(const uint8_t *peerMAC, esp_now_recv_cb_t callback) {
 }
 
 constexpr uint8_t JOY_X_PIN = 33, JOY_Y_PIN = 32;
+constexpr uint8_t OLED_SDA_PIN = 21, OLED_SCL_PIN = 22;
+constexpr uint8_t OLED_ADDRESS = 0x3C; // Direccion I2C habitual del SSD1306.
 const uint8_t receiverMAC[] = {0x68, 0x09, 0x47, 0x25, 0xD4, 0x38};
 constexpr uint32_t SEND_MS = 20, PRINT_MS = 100, TELEMETRY_TIMEOUT_MS = 500;
+Adafruit_SSD1306 oled(128, 64, &Wire, -1);
+bool oledReady = false;
 Telemetry latest = {};
 uint32_t receivedAt = 0;
 bool received = false;
@@ -109,10 +117,61 @@ void onDataReceive(const esp_now_recv_info_t *info, const uint8_t *data, int len
   portEXIT_CRITICAL(&mux);
 }
 
+void drawOLED(bool telemetryFresh, const Telemetry &p) {
+  if (!oledReady) return;
+
+  oled.clearDisplay();
+  oled.setTextColor(SSD1306_WHITE);
+  oled.setTextWrap(false);
+
+  oled.setTextSize(1);
+  oled.setCursor(0, 0);
+  oled.print("BATERIA DEL AUTO");
+  oled.drawLine(0, 12, 127, 12, SSD1306_WHITE);
+
+  if (telemetryFresh) {
+    oled.setTextSize(3);
+    oled.setCursor(0, 23);
+    oled.print(float(p.batteryMv) / 1000.0f, 2);
+    oled.print("V");
+
+    oled.setTextSize(1);
+    oled.setCursor(0, 56);
+    const char *label = p.state == ACTIVE ? "ACTIVO" :
+                        p.state == SIGNAL_LOST ? "SIN ORDENES" : "NEUTRO REQUERIDO";
+    oled.print(label);
+  } else {
+    oled.setTextSize(2);
+    oled.setCursor(0, 27);
+    oled.print("SIN DATOS");
+    oled.setTextSize(1);
+    oled.setCursor(0, 56);
+    oled.print("Revisar enlace ESP-NOW");
+  }
+
+  oled.display();
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(JOY_X_PIN, INPUT); pinMode(JOY_Y_PIN, INPUT);
   analogReadResolution(12);
+
+  // OLED SSD1306 I2C: SDA=21, SCL=22. La pantalla no bloquea el mando si falla.
+  Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
+  oledReady = oled.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
+  if (oledReady) {
+    oled.clearDisplay();
+    oled.setTextColor(SSD1306_WHITE);
+    oled.setTextSize(1);
+    oled.setCursor(0, 0);
+    oled.println("MANDO RC");
+    oled.println("Iniciando pantalla...");
+    oled.display();
+  } else {
+    Serial.println("AVISO: no se detecto OLED SSD1306 en 0x3C.");
+  }
+
   // Se mantiene la atenuacion predeterminada del core, como en el original.
   if (!beginRadio(receiverMAC, onDataReceive)) {
     Serial.println("ERROR ESP-NOW: reinicie tras corregir."); return;
@@ -139,14 +198,20 @@ void loop() {
     p = latest; stamp = receivedAt; seen = received;
     portEXIT_CRITICAL(&mux);
     now = millis();
-    char line[96];
-    if (!seen || uint32_t(now - stamp) > TELEMETRY_TIMEOUT_MS) {
-      snprintf(line, sizeof(line), "AUTO | SIN TELEMETRIA\n");
+    bool telemetryFresh = seen && uint32_t(now - stamp) <= TELEMETRY_TIMEOUT_MS;
+    drawOLED(telemetryFresh, p);
+
+    char line[128];
+    if (!telemetryFresh) {
+      //snprintf(line, sizeof(line), "AUTO | SIN TELEMETRIA\n");
     } else {
       const char *label = p.state == ACTIVE ? "ACTIVO" :
                           p.state == SIGNAL_LOST ? "SIN ORDENES" : "NEUTRO REQUERIDO";
       int percent = int(lroundf(100.0f * p.pwm / 255.0f));
-      snprintf(line, sizeof(line), "AUTO | PWM:%+d%% | Servo:%u | %s\n",
+      snprintf(line, sizeof(line),
+               "AUTO | BAT:%u.%02uV | PWM:%+d%% | Servo:%u | %s\n",
+               unsigned(p.batteryMv / 1000),
+               unsigned((p.batteryMv % 1000) / 10),
                percent, unsigned(p.angle), label);
     }
     size_t n = strlen(line);
@@ -154,5 +219,24 @@ void loop() {
     if (Serial.availableForWrite() >= int(n))
       Serial.write((const uint8_t *)line, n);
   }
+
+
+  // DEBUG
+  static unsigned long lastDebug = 0;
+
+  if (millis() - lastDebug >= 200) {
+    lastDebug = millis();
+
+    int rawX = analogRead(JOY_X_PIN);
+    int rawY = analogRead(JOY_Y_PIN);
+
+    Serial.printf(
+      "Joystick X: %4d | Joystick Y: %4d\n",
+      rawX, rawY
+    );
+  }
+
+
+
   delay(1);
 }

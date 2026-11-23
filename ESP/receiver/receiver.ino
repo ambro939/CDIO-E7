@@ -30,9 +30,10 @@ struct __attribute__((packed)) Telemetry {
   int16_t pwm;
   uint8_t angle;
   uint8_t state;
+  uint16_t batteryMv; // Voltaje de bateria medido en el auto, en mV.
 };
 static_assert(sizeof(Command) == 12, "Command layout");
-static_assert(sizeof(Telemetry) == 12, "Telemetry layout");
+static_assert(sizeof(Telemetry) == 14, "Telemetry layout");
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 bool ready = false;
 bool txBusy = false;
@@ -87,7 +88,12 @@ const uint8_t senderMAC[] = {0x68, 0x09, 0x47, 0x26, 0xD4, 0x48};
 constexpr int CENTER = 1800, DEADZONE = 150;
 constexpr int SERVO_MIN = 0, SERVO_MAX = 180, SERVO_CENTER = 90;
 constexpr uint32_t SIGNAL_TIMEOUT_MS = 500, CONTROL_MS = 5, TELEMETRY_MS = 100;
-constexpr float FULL_SCALE_RAMP_MS = 100.0f;
+// Rampa lineal: 0->100% en 100 ms y 100->0% en 50 ms.
+constexpr float ACCEL_RAMP_MS = 100.0f;
+constexpr float BRAKE_RAMP_MS = 50.0f;
+constexpr uint8_t BATTERY_PIN = 34;
+// Divisor medido: 99.2 kOhm arriba y 20.14 kOhm abajo.
+constexpr float BATTERY_DIVIDER_FACTOR = 5.9255f;
 // ESP32 clasico: canales 0/1 para motor, canal 2 para servo.
 // El servo usa LEDC directamente para evitar colisiones con ESP32Servo.
 Command latest = {};
@@ -97,6 +103,7 @@ bool motorPinsReady = false, servoReady = false, armed = false;
 float applied = 0.0f;
 int appliedPWM = 0, lastServoAngle = SERVO_CENTER;
 uint32_t lastControl = 0, lastTelemetry = 0;
+uint16_t batteryMv = 0;
 CarState state = WAIT_NEUTRAL;
 
 void onDataReceive(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
@@ -148,11 +155,30 @@ void stopMotor() {
   armed = false;
 }
 
+uint16_t readBatteryMillivolts() {
+  // Promediar lecturas para reducir pequenas fluctuaciones del ADC.
+  constexpr uint8_t SAMPLES = 8;
+  uint32_t sumMilliVolts = 0;
+  for (uint8_t i = 0; i < SAMPLES; ++i) {
+    sumMilliVolts += analogReadMilliVolts(BATTERY_PIN);
+  }
+  float adcMilliVolts = float(sumMilliVolts) / SAMPLES;
+  uint32_t measured = uint32_t(lroundf(adcMilliVolts * BATTERY_DIVIDER_FACTOR));
+  if (measured > 65535UL) measured = 65535UL;
+  return uint16_t(measured);
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(EN_PIN, OUTPUT); digitalWrite(EN_PIN, LOW);
   pinMode(RPWM_PIN, OUTPUT); digitalWrite(RPWM_PIN, LOW);
   pinMode(LPWM_PIN, OUTPUT); digitalWrite(LPWM_PIN, LOW);
+
+  // Medicion de bateria mediante divisor resistivo en GPIO34 (ADC1).
+  pinMode(BATTERY_PIN, INPUT);
+  analogReadResolution(12);
+  analogSetPinAttenuation(BATTERY_PIN, ADC_11db);
+
   // No se desactiva la proteccion de brownout.
   bool rightOK = ledcAttachChannel(RPWM_PIN, 1000, 8, 0);
   bool leftOK = ledcAttachChannel(LPWM_PIN, 1000, 8, 1);
@@ -161,12 +187,11 @@ void setup() {
   motorPinsReady = rightOK && leftOK;
   servoReady = ledcAttachChannel(SERVO_PIN, 50, 16, 2);
   if (servoReady) writeServo(SERVO_CENTER);
-  if (!motorPinsReady || !servoReady ||
-      ledcReadFreq(RPWM_PIN) != 1000 || ledcReadFreq(LPWM_PIN) != 1000 ||
-      ledcReadFreq(SERVO_PIN) != 50) {
-    Serial.println("ERROR PWM: motor deshabilitado; reinicie tras corregir.");
+  if (!motorPinsReady || !servoReady) {
+    Serial.println("ERROR: inicializacion PWM fallida.");
     return;
   }
+  Serial.println("PWM inicializado correctamente.");
   if (!beginRadio(senderMAC, onDataReceive)) {
     Serial.println("ERROR ESP-NOW: motor deshabilitado."); return;
   }
@@ -208,9 +233,14 @@ void loop() {
                             long(SERVO_MIN), long(SERVO_MAX));
       if (abs(angle - lastServoAngle) >= 2) writeServo(angle);
       int target = armed ? targetFromJoystick(cmd.y) : 0;
-      // Al invertir, publicar al menos un ciclo en cero antes de invertir PWM.
+      // Al invertir, llegar primero a cero antes de aplicar PWM en sentido opuesto.
       int stage = ((applied > 0 && target < 0) || (applied < 0 && target > 0)) ? 0 : target;
-      float step = 255.0f * dt / FULL_SCALE_RAMP_MS;
+
+      // Si disminuye la magnitud de PWM, usar la rampa de frenado (50 ms).
+      // Si aumenta, usar la rampa de aceleracion (100 ms).
+      bool braking = fabsf(float(stage)) < fabsf(applied);
+      float rampMs = braking ? BRAKE_RAMP_MS : ACCEL_RAMP_MS;
+      float step = 255.0f * dt / rampMs;
       if (applied < stage) applied = fminf(applied + step, float(stage));
       else if (applied > stage) applied = fmaxf(applied - step, float(stage));
       writeMotor(int(lroundf(applied)));
@@ -218,8 +248,9 @@ void loop() {
   }
   if (uint32_t(now - lastTelemetry) >= TELEMETRY_MS) {
     lastTelemetry = now;
+    batteryMv = readBatteryMillivolts();
     Telemetry p = {MAGIC, VERSION, 2, cmd.sequence, int16_t(appliedPWM),
-                   uint8_t(lastServoAngle), uint8_t(state)};
+                   uint8_t(lastServoAngle), uint8_t(state), batteryMv};
     sendPacket(senderMAC, &p, sizeof(p));
   }
   delay(1); // Ceder CPU; no es una espera de control de 20/150 ms.
